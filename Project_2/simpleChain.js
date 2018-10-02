@@ -4,7 +4,6 @@
 
 const SHA256 = require('crypto-js/sha256');
 
-
 /* ===== Block Class ==============================
 |  Class with a constructor for block 			   |
 |  ===============================================*/
@@ -25,41 +24,101 @@ class Block{
 
 class Blockchain{
   constructor(){
-    this.chain = [];
-    this.addBlock(new Block("First block in the chain - Genesis block"));
+    this.createIfNotExistsGenesisBlock().then(function(msg) {
+			// NOP
+			console.log('constructor(): createIfNotExists done');
+		}, function(err) {
+			console.log(err);
+		});
   }
+
+	// Check if genesis block exists, create, if not
+	createIfNotExistsGenesisBlock() {
+		// console.log('Searching for Genesis Block');
+		return new Promise(function(resolve, reject) {
+			return getLevelDBData(0).then((value) => {
+				// NOP
+				console.log('Genesis block exists.');
+				resolve('Genesis block exists ' + value);
+			}, (key) => {
+				// Create new Genesis block
+				console.log('Genesis block not found, creating a new one.');
+				var genesisBlock = new Block("First block in the chain - Genesis block");
+				genesisBlock.time = new Date().getTime().toString().slice(0,-3);
+				genesisBlock.hash = SHA256(JSON.stringify(genesisBlock)).toString();
+				// Persisting data on levelDB
+				return addLevelDBData(0, JSON.stringify(genesisBlock).toString());
+			});
+		});
+
+	}
 
   // Add new block
-  addBlock(newBlock){
-    // Block height
-    newBlock.height = this.chain.length;
-    // UTC timestamp
-    newBlock.time = new Date().getTime().toString().slice(0,-3);
-    // previous block hash
-    if(this.chain.length>0){
-      newBlock.previousBlockHash = this.chain[this.chain.length-1].hash;
-    }
-    // Block hash with SHA256 using newBlock and converting to a string
-    newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
-    // Adding block object to chain
-  	this.chain.push(newBlock);
+  addBlock(newBlock) {
+		console.log('addBlock');
+		this.createIfNotExistsGenesisBlock().then(function(msg) {
+			// NOP
+			console.log('addBlock(): createIfNotExists done');;
+		}, function(err) {
+			console.log(err);
+		});
+
+		this.getBlockHeight().then((blockHeight) => {
+			// Block height
+			newBlock.height = blockHeight + 1;
+			// UTC timestamp
+			newBlock.time = new Date().getTime().toString().slice(0,-3);
+			// previous block hash
+			console.log('Setting previousBlockHash');
+			newBlock.previousBlockHash = this.getParsedBlock(blockHeight).then(
+				(parsedRetBlock) => {
+					newBlock.previousBlockHash = JSON.parse(parsedRetBlock).hash;
+
+					// Block hash with SHA256 using newBlock and converting to a string
+					newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
+					// Persisting data on levelDB
+					addLevelDBData(newBlock.height, JSON.stringify(newBlock).toString());
+
+				}, (blockHeight) => {
+					console.log('getParsedBlock() failed.');
+				});
+		}, (err) => {
+			console.log("getBlockHeight() failed");
+		});
+
   }
 
-  // Get block height
-    getBlockHeight(){
-      return this.chain.length-1;
-    }
+	// Get block height
+  getBlockHeight(){
+		console.log('getBlockHeight');
+		return new Promise(function(resolve, reject) {
+			count().then(function(numBlocks) {
+				resolve(numBlocks - 1);
+			}, function(err) {
+				reject(err);
+			});
+		});
 
-    // get block
-    getBlock(blockHeight){
-      // return object as a single string
-      return JSON.parse(JSON.stringify(this.chain[blockHeight]));
-    }
+	}
 
+  // get block
+  getParsedBlock(blockHeight){
+		console.log('getParsedBlock');
+		// return object as a single string
+		return new Promise(function(resolve, reject) {
+			getLevelDBData(blockHeight).then((retBlock) => {
+				resolve(JSON.parse(JSON.stringify(retBlock)));
+			}, (blockHeight) => {
+				reject(blockHeight);
+			});
+		});
+	}
+}
+/*
     // validate block
     validateBlock(blockHeight){
       // get block object
-      let block = this.getBlock(blockHeight);
+      let block = this.getParsedBlock(blockHeight);
       // get block hash
       let blockHash = block.hash;
       // remove block hash to test block integrity
@@ -95,4 +154,4 @@ class Blockchain{
         console.log('No errors detected');
       }
     }
-}
+*/
