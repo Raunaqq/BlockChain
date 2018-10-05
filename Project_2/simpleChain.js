@@ -113,45 +113,69 @@ class Blockchain{
 			});
 		});
 	}
-}
-/*
-    // validate block
-    validateBlock(blockHeight){
-      // get block object
-      let block = this.getParsedBlock(blockHeight);
-      // get block hash
-      let blockHash = block.hash;
-      // remove block hash to test block integrity
-      block.hash = '';
-      // generate block hash
-      let validBlockHash = SHA256(JSON.stringify(block)).toString();
-      // Compare
-      if (blockHash===validBlockHash) {
-          return true;
-        } else {
-          console.log('Block #'+blockHeight+' invalid hash:\n'+blockHash+'<>'+validBlockHash);
-          return false;
-        }
-    }
 
-   // Validate blockchain
-    validateChain(){
-      let errorLog = [];
-      for (var i = 0; i < this.chain.length-1; i++) {
-        // validate block
-        if (!this.validateBlock(i))errorLog.push(i);
-        // compare blocks hash link
-        let blockHash = this.chain[i].hash;
-        let previousHash = this.chain[i+1].previousBlockHash;
-        if (blockHash!==previousHash) {
-          errorLog.push(i);
-        }
-      }
-      if (errorLog.length>0) {
-        console.log('Block errors = ' + errorLog.length);
-        console.log('Blocks: '+errorLog);
-      } else {
-        console.log('No errors detected');
-      }
-    }
-*/
+  // validate block
+  validateBlock(blockHeight){
+		return new Promise((resolve, reject) => {
+			// console.log('validateBlock() with ' + blockHeight);
+			// get block object
+			this.getParsedBlock(blockHeight).then((parsedRetBlock) => {
+				let blockObject = JSON.parse(parsedRetBlock);
+				let blockHash = blockObject.hash;
+				// remove block hash to test block integrity
+				blockObject.hash = '';
+				// generate block hash
+				let validBlockHash = SHA256(JSON.stringify(blockObject)).toString();
+				// Compare
+				if (blockHash===validBlockHash) {
+					console.log('Block #' + blockHeight+' has valid hash.');
+					// Return a dictionary of hashes and the final result.
+					let retVal = {
+						result : true,
+						blockHash : blockHash,
+						previousBlockHash : blockObject.previousBlockHash
+					}
+					resolve(retVal);
+				} else {
+					reject('Block #'+blockHeight+' invalid hash:\n'+blockHash+'<>'+validBlockHash);
+				}
+			}, (err) => {
+				console.log('validateBlock() failed.');
+				reject(err);
+			});
+		});
+
+
+  }
+
+	// Validate blockchain
+  validateChain(){
+		this.getBlockHeight().then((blockHeight) => {
+			let numBlocks = blockHeight + 1;
+			let promiseArray = [];
+
+			// Create an array of promises
+			for (var i = 0; i < numBlocks; i++) {
+				promiseArray.push(this.validateBlock(i));
+			}
+
+			// Wait for all promises to resolve
+			Promise.all(promiseArray).then((results) => {
+				// Check previousBlockHash in block i+1 with hash of block i.
+				for (var i = 1; i < numBlocks; i++) {
+					if (results[i].previousBlockHash !== results[i-1].blockHash) {
+						throw new TypeError();
+					}
+				}
+				console.log('validateChain() Success!');
+
+			},(err) => {
+				console.log('Promise.all() failed. ' + err);
+			});
+
+		}, (err) => {
+			console.log('validateChain() failed.');
+		});
+  }
+
+}
