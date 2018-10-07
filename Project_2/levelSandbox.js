@@ -51,3 +51,23 @@ function count() {
     });
   });
 }
+
+/*
+ * Function to print all the blocks.
+ */
+function printAllBlocks() {
+    db.createReadStream().on('data', function(data){
+      console.log(data);
+    }).on('error', function(err){
+      console.log('printAllBlocks() failed.');
+    }).on('close',function() {
+      console.log('printAllBlocks() success.');
+    });
+}
+
+module.exports = {
+  getLevelDBData : getLevelDBData,
+  addLevelDBData : addLevelDBData,
+  count : count,
+  printAllBlocks : printAllBlocks
+}
