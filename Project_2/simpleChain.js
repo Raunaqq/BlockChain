@@ -55,37 +55,41 @@ class Blockchain{
 
   // Add new block
   addBlock(newBlock) {
-		console.log('addBlock');
-		this.createIfNotExistsGenesisBlock().then(function(msg) {
-			// NOP
-			console.log('addBlock(): createIfNotExists done');;
-		}, function(err) {
-			console.log(err);
+		return new Promise((resolve, reject) => {
+			console.log('addBlock');
+			this.createIfNotExistsGenesisBlock().then(function(msg) {
+				// NOP
+				console.log('addBlock(): createIfNotExists done');;
+			}, function(err) {
+				console.log(err);
+			});
+
+			this.getBlockHeight().then((blockHeight) => {
+				// Block height
+				newBlock.height = blockHeight + 1;
+				// UTC timestamp
+				newBlock.time = new Date().getTime().toString().slice(0,-3);
+				// previous block hash
+				console.log('Setting previousBlockHash');
+				newBlock.previousBlockHash = this.getParsedBlock(blockHeight).then(
+					(parsedRetBlock) => {
+						newBlock.previousBlockHash = JSON.parse(parsedRetBlock).hash;
+
+						// Block hash with SHA256 using newBlock and converting to a string
+						newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
+						// Persisting data on levelDB
+						addLevelDBData(newBlock.height, JSON.stringify(newBlock).toString());
+						resolve('Block #');
+
+					}, (blockHeight) => {
+						// console.log('getParsedBlock() failed.');
+						reject('getParsedBlock() failed.');
+					});
+			}, (err) => {
+				console.log('getBlockHeight() failed');
+				reject('getBlockHeight() failed');
+			});
 		});
-
-		this.getBlockHeight().then((blockHeight) => {
-			// Block height
-			newBlock.height = blockHeight + 1;
-			// UTC timestamp
-			newBlock.time = new Date().getTime().toString().slice(0,-3);
-			// previous block hash
-			console.log('Setting previousBlockHash');
-			newBlock.previousBlockHash = this.getParsedBlock(blockHeight).then(
-				(parsedRetBlock) => {
-					newBlock.previousBlockHash = JSON.parse(parsedRetBlock).hash;
-
-					// Block hash with SHA256 using newBlock and converting to a string
-					newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
-					// Persisting data on levelDB
-					addLevelDBData(newBlock.height, JSON.stringify(newBlock).toString());
-
-				}, (blockHeight) => {
-					console.log('getParsedBlock() failed.');
-				});
-		}, (err) => {
-			console.log("getBlockHeight() failed");
-		});
-
   }
 
 	// Get block height
