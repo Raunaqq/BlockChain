@@ -31,7 +31,7 @@ function testAddBlocks() {
       myBlockChain.addBlock(blockTest).then((result) => {
         console.log(result + (i+1) + ' added.');
         i++;
-        if (i < 10) theLoop(i);
+        if (i < 5) theLoop(i);
       });
     }, 1000);
   })(0);
@@ -68,4 +68,22 @@ function testGetBlockHeight() {
     console.log('getBlockHeight() failed.');
   });
 
+}
+
+/*
+ * Function to test validateChain() by injecting errors.
+ * Call this function after creating at least 10 blocks.
+ */
+function testValidateChain() {
+  getLevelDBData(4).then((retBlock) => {
+    console.log('getLevelDBData() done.');
+    addLevelDBData(2, retBlock).then((msg) => {
+      console.log('addLevelDBData() done.');
+      myBlockChain.validateChain();
+    }, (err) => {
+      console.log(err);
+    });
+  }, (err) => {
+    console.log(err);
+  });
 }
