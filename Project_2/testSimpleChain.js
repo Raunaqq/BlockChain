@@ -47,7 +47,7 @@ function printAllBlocks() {
     }).on('error', function(err){
       console.log('printAllBlocks() failed.');
     }).on('close',function() {
-      console.log('printAllBlocks() success.')
+      console.log('printAllBlocks() success.');
     });
   }).then(function() {;}, function(err){;});
 }
@@ -55,3 +55,17 @@ function printAllBlocks() {
 /*
  * Function to test getBlockHeight() function.
  */
+function testGetBlockHeight() {
+  var expectedBlockHeight = 10;
+  myBlockChain.getBlockHeight().then((blockHeight) => {
+    console.log('Obtained blockHeight: ' + blockHeight);
+    if (expectedBlockHeight === blockHeight) {
+      console.log('getBlockHeight() returned expected value.');
+    } else {
+      console.log('getBlockHeight() returned unexpected value.');
+    }
+  }, (blockHeightErr) => {
+    console.log('getBlockHeight() failed.');
+  });
+
+}
