@@ -24,10 +24,10 @@ class Block{
 
 class Blockchain{
   constructor(){
-    this.createIfNotExistsGenesisBlock().then(function(msg) {
+    this.createIfNotExistsGenesisBlock().then((msg) => {
 			// NOP
 			console.log('constructor(): createIfNotExists done');
-		}, function(err) {
+		}, (err) => {
 			console.log(err);
 		});
   }
@@ -35,10 +35,9 @@ class Blockchain{
 	// Check if genesis block exists, create, if not
 	createIfNotExistsGenesisBlock() {
 		// console.log('Searching for Genesis Block');
-		return new Promise(function(resolve, reject) {
+		return new Promise((resolve, reject) => {
 			return getLevelDBData(0).then((value) => {
 				// NOP
-				console.log('Genesis block exists.');
 				resolve('Genesis block exists ' + value);
 			}, (key) => {
 				// Create new Genesis block
@@ -50,17 +49,16 @@ class Blockchain{
 				return addLevelDBData(0, JSON.stringify(genesisBlock).toString());
 			});
 		});
-
 	}
 
   // Add new block
   addBlock(newBlock) {
 		return new Promise((resolve, reject) => {
-			console.log('addBlock');
-			this.createIfNotExistsGenesisBlock().then(function(msg) {
+			// console.log('addBlock');
+			this.createIfNotExistsGenesisBlock().then((msg) => {
 				// NOP
-				console.log('addBlock(): createIfNotExists done');;
-			}, function(err) {
+				// console.log('addBlock(): createIfNotExists done');;
+			}, (err) => {
 				console.log(err);
 			});
 
@@ -71,20 +69,24 @@ class Blockchain{
 				newBlock.time = new Date().getTime().toString().slice(0,-3);
 				// previous block hash
 				console.log('Setting previousBlockHash');
-				newBlock.previousBlockHash = this.getParsedBlock(blockHeight).then(
-					(parsedRetBlock) => {
-						newBlock.previousBlockHash = JSON.parse(parsedRetBlock).hash;
+				this.getParsedBlock(blockHeight).then((parsedRetBlock) => {
+					newBlock.previousBlockHash = JSON.parse(parsedRetBlock).hash;
 
-						// Block hash with SHA256 using newBlock and converting to a string
-						newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
-						// Persisting data on levelDB
-						addLevelDBData(newBlock.height, JSON.stringify(newBlock).toString());
-						resolve('Block #');
+					// Block hash with SHA256 using newBlock and converting to a string
+					newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
 
-					}, (blockHeight) => {
-						// console.log('getParsedBlock() failed.');
-						reject('getParsedBlock() failed.');
-					});
+					// Persisting data on levelDB
+					addLevelDBData(newBlock.height, JSON.stringify(newBlock).toString()).then((msg) => {
+							console.log(msg);
+						}, (err) => {
+							console.log(err);
+						});
+					resolve('Block #');
+
+				}, (blockHeight) => {
+					// console.log('getParsedBlock() failed.');
+					reject('getParsedBlock() failed.');
+				});
 			}, (err) => {
 				console.log('getBlockHeight() failed');
 				reject('getBlockHeight() failed');
@@ -94,11 +96,11 @@ class Blockchain{
 
 	// Get block height
   getBlockHeight(){
-		console.log('getBlockHeight');
-		return new Promise(function(resolve, reject) {
-			count().then(function(numBlocks) {
+		// console.log('getBlockHeight');
+		return new Promise((resolve, reject) => {
+			count().then((numBlocks) => {
 				resolve(numBlocks - 1);
-			}, function(err) {
+			}, (err) => {
 				reject(err);
 			});
 		});
@@ -107,7 +109,7 @@ class Blockchain{
 
   // get block
   getParsedBlock(blockHeight){
-		console.log('getParsedBlock');
+		// console.log('getParsedBlock');
 		// return object as a single string
 		return new Promise(function(resolve, reject) {
 			getLevelDBData(blockHeight).then((retBlock) => {
@@ -132,16 +134,28 @@ class Blockchain{
 				let validBlockHash = SHA256(JSON.stringify(blockObject)).toString();
 				// Compare
 				if (blockHash===validBlockHash) {
-					console.log('Block #' + blockHeight+' has valid hash.');
-					// Return a dictionary of hashes and the final result.
-					let retVal = {
-						result : true,
-						blockHash : blockHash,
-						previousBlockHash : blockObject.previousBlockHash
+					// console.log('Block #' + blockHeight+' has valid hash.');
+
+					// Get the previous block in the chain to validate the hashes.
+					if (blockHeight > 0) {
+						this.getParsedBlock(blockHeight - 1).then((prevParsedRetBlock) => {
+							let prevBlockObject = JSON.parse(prevParsedRetBlock);
+							let prevBlockHash = prevBlockObject.hash;
+							// previousBlock.hash and block.previousBlockHash
+							if (prevBlockHash === blockObject.previousBlockHash) {
+								// console.log('Link is valid.');
+								resolve(true);
+							} else {
+								resolve('Link ' + (blockHeight-1) + ' and ' +
+								blockHeight  + ' is invalid.');
+							}
+						},(err) => {
+							reject('getParsedBlock() failed to retrieve previous block.');
+						});
 					}
-					resolve(retVal);
 				} else {
-					reject('Block #'+blockHeight+' invalid hash:\n'+blockHash+'<>'+validBlockHash);
+					resolve('Block #'+blockHeight+' invalid hash:\n'+ blockHash +
+						'<>' + validBlockHash);
 				}
 			}, (err) => {
 				console.log('validateBlock() failed.');
@@ -153,32 +167,23 @@ class Blockchain{
   }
 
 	// Validate blockchain
-  validateChain(){
+  validateChain() {
 		this.getBlockHeight().then((blockHeight) => {
 			let numBlocks = blockHeight + 1;
-			let promiseArray = [];
 
 			// Create an array of promises
 			for (var i = 0; i < numBlocks; i++) {
-				promiseArray.push(this.validateBlock(i));
+				this.validateBlock(i).then((result) => {
+					if (result !== true) {
+						console.log(result);
+					}
+				}, (err) => {
+					console.log(err);
+				});
 			}
 
-			// Wait for all promises to resolve
-			Promise.all(promiseArray).then((results) => {
-				// Check previousBlockHash in block i+1 with hash of block i.
-				for (var i = 1; i < numBlocks; i++) {
-					if (results[i].previousBlockHash !== results[i-1].blockHash) {
-						throw new TypeError();
-					}
-				}
-				console.log('validateChain() Success!');
-
-			},(err) => {
-				console.log('Promise.all() failed. ' + err);
-			});
-
 		}, (err) => {
-			console.log('validateChain() failed.');
+			console.log('validateChain() failed because: ' + err);
 		});
   }
 
