@@ -1,5 +1,4 @@
-var myBlockChain = new Blockchain();
-
+var testChain = new Blockchain();
 /* ===== Testing ==============================================================|
 |  - Self-invoking function to add blocks to chain                             |
 |  - Learn more:                                                               |
@@ -26,9 +25,9 @@ var myBlockChain = new Blockchain();
 
 function testAddBlocks() {
   (function theLoop (i) {
-    setTimeout(function () {
+    setTimeout(function (chain) {
       let blockTest = new Block("Test Block - " + (i + 1));
-      myBlockChain.addBlock(blockTest).then((result) => {
+      testChain.addBlock(blockTest).then((result) => {
         console.log(result + (i+1) + ' added.');
         i++;
         if (i < 5) theLoop(i);
@@ -38,26 +37,11 @@ function testAddBlocks() {
 }
 
 /*
- * Function to print all the blocks.
- */
-function printAllBlocks() {
-  return new Promise(function(resolve, reject) {
-    db.createReadStream().on('data', function(data){
-      console.log(data);
-    }).on('error', function(err){
-      console.log('printAllBlocks() failed.');
-    }).on('close',function() {
-      console.log('printAllBlocks() success.');
-    });
-  }).then(function() {;}, function(err){;});
-}
-
-/*
  * Function to test getBlockHeight() function.
  */
 function testGetBlockHeight() {
   var expectedBlockHeight = 10;
-  myBlockChain.getBlockHeight().then((blockHeight) => {
+  testChain.getBlockHeight().then((blockHeight) => {
     console.log('Obtained blockHeight: ' + blockHeight);
     if (expectedBlockHeight === blockHeight) {
       console.log('getBlockHeight() returned expected value.');
@@ -79,11 +63,18 @@ function testValidateChain() {
     console.log('getLevelDBData() done.');
     addLevelDBData(2, retBlock).then((msg) => {
       console.log('addLevelDBData() done.');
-      myBlockChain.validateChain();
+      testChain.validateChain();
     }, (err) => {
       console.log(err);
     });
   }, (err) => {
     console.log(err);
   });
+}
+
+module.exports = {
+  testAddBlocks : testAddBlocks,
+  testGetBlockHeight : testGetBlockHeight,
+  testValidateChain : testValidateChain
+
 }
