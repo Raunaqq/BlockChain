@@ -3,13 +3,14 @@
 |  =========================================================*/
 
 const SHA256 = require('crypto-js/sha256');
+const levelSandbox = require('./levelSandbox');
 
 /* ===== Block Class ==============================
 |  Class with a constructor for block 			   |
 |  ===============================================*/
 
-class Block{
-	constructor(data){
+class Block {
+	constructor(data) {
      this.hash = "",
      this.height = 0,
      this.body = data,
@@ -22,11 +23,11 @@ class Block{
 |  Class with a constructor for new blockchain 		|
 |  ================================================*/
 
-class Blockchain{
+class Blockchain {
   constructor(){
     this.createIfNotExistsGenesisBlock().then((msg) => {
 			// NOP
-			console.log('constructor(): createIfNotExists done');
+			console.log('createIfNotExists() done: ' + msg);
 		}, (err) => {
 			console.log(err);
 		});
@@ -34,9 +35,9 @@ class Blockchain{
 
 	// Check if genesis block exists, create, if not
 	createIfNotExistsGenesisBlock() {
-		// console.log('Searching for Genesis Block');
+		console.log('Searching for Genesis Block');
 		return new Promise((resolve, reject) => {
-			return getLevelDBData(0).then((value) => {
+			return levelSandbox.getLevelDBData(0).then((value) => {
 				// NOP
 				resolve('Genesis block exists ' + value);
 			}, (key) => {
@@ -46,7 +47,12 @@ class Blockchain{
 				genesisBlock.time = new Date().getTime().toString().slice(0,-3);
 				genesisBlock.hash = SHA256(JSON.stringify(genesisBlock)).toString();
 				// Persisting data on levelDB
-				return addLevelDBData(0, JSON.stringify(genesisBlock).toString());
+				return levelSandbox.addLevelDBData(0, JSON.stringify(genesisBlock).toString())
+					.then((msg) => {
+						console.log(msg);
+					}, (err) => {
+						console.log(err);
+					});
 			});
 		});
 	}
@@ -76,7 +82,7 @@ class Blockchain{
 					newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
 
 					// Persisting data on levelDB
-					addLevelDBData(newBlock.height, JSON.stringify(newBlock).toString()).then((msg) => {
+					levelSandbox.addLevelDBData(newBlock.height, JSON.stringify(newBlock).toString()).then((msg) => {
 							console.log(msg);
 						}, (err) => {
 							console.log(err);
@@ -98,7 +104,7 @@ class Blockchain{
   getBlockHeight(){
 		// console.log('getBlockHeight');
 		return new Promise((resolve, reject) => {
-			count().then((numBlocks) => {
+			levelSandbox.count().then((numBlocks) => {
 				resolve(numBlocks - 1);
 			}, (err) => {
 				reject(err);
@@ -112,7 +118,7 @@ class Blockchain{
 		// console.log('getParsedBlock');
 		// return object as a single string
 		return new Promise(function(resolve, reject) {
-			getLevelDBData(blockHeight).then((retBlock) => {
+			levelSandbox.getLevelDBData(blockHeight).then((retBlock) => {
 				resolve(JSON.parse(JSON.stringify(retBlock)));
 			}, (blockHeight) => {
 				reject(blockHeight);
