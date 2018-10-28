@@ -28,10 +28,10 @@ server.route({
      handler:async(request,h) => {
        console.log('GET');
        const parsedBlock = await server.blockchain.getParsedBlock(request.params.blockHeight)
-                                      .catch(error => {
-                                        console.log('caught' + error);
-                                        return h.response('Block at blockheight ' + error + ' not found.').code(404);
-                                      });
+                                  .catch(error => {
+                                    console.log('caught' + error);
+                                    return h.response('Block at blockheight ' + error + ' not found.').code(404);
+                                  });
        return h.response(JSON.parse(parsedBlock)).code(200);
      }
  });
@@ -46,7 +46,10 @@ server.route({
          console.log('POST');
          console.log(request.payload['blockbody']);
          var newBlock = new simpleChain.Block(request.payload['blockbody']);
-         const addedBlock = await server.blockchain.addBlock(newBlock);
+         const addedBlock = await server.blockchain.addBlock(newBlock)
+                                   .catch(error => {
+                                     console.log('Error inserting block');
+                                   });
          return h.response(JSON.parse(addedBlock)).code(200);
        }
    });
@@ -59,10 +62,17 @@ server.route({
         path:'/block/{blockBody}',
         handler:async(request,h) => {
           console.log('POST');
-          console.log(request.payload['blockbody']);
-          var newBlock = new simpleChain.Block(request.payload['blockbody']);
-          const addedBlock = await server.blockchain.addBlock(newBlock);
-          return h.response(addedBlock).code(200);
+          console.log(request.params.blockBody);
+          if (blockBody == '') {
+            return h.response('Block body cannot be empty').code(500);
+          } else {
+            var newBlock = new simpleChain.Block(blockBody);
+            const addedBlock = await server.blockchain.addBlock(newBlock)
+                                      .catch(error => {
+                                        console.log('Error inserting block');
+                                      });
+            return h.response(addedBlock).code(200);
+          }
         }
     });
 
