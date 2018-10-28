@@ -27,25 +27,53 @@ server.route({
      path:'/block/{blockHeight}',
      handler:async(request,h) => {
        console.log('GET');
-       const parsedBlock = await server.blockchain.getParsedBlock(request.params.blockHeight);
-       return h.response(parsedBlock).code(200);
+       const parsedBlock = await server.blockchain.getParsedBlock(request.params.blockHeight)
+                                  .catch(error => {
+                                    console.log('caught' + error);
+                                    return h.response('Block at blockheight ' + error + ' not found.').code(404);
+                                  });
+       return h.response(JSON.parse(parsedBlock)).code(200);
      }
  });
 
   /*
-   * Route for POSTing a block given the block body.
+   * Route for POSTing a block given the block body in the form.
    */
    server.route({
        method:['PUT','POST'],
-       path:'/block',
+       path:'/block/blockbody-from-form',
        handler:async(request,h) => {
          console.log('POST');
          console.log(request.payload['blockbody']);
          var newBlock = new simpleChain.Block(request.payload['blockbody']);
-         const addedBlock = await server.blockchain.addBlock(newBlock);
-         return h.response(addedBlock).code(200);
+         const addedBlock = await server.blockchain.addBlock(newBlock)
+                                   .catch(error => {
+                                     console.log('Error inserting block');
+                                   });
+         return h.response(JSON.parse(addedBlock)).code(200);
        }
    });
+
+   /*
+    * Route for POSTing a block given the block body.
+    */
+    server.route({
+        method:['PUT','POST'],
+        path:'/block/{blockBody}',
+        handler:async(request,h) => {
+          console.log('POST');
+          console.log(request.params.blockBody);
+          if (blockBody == '') {
+            return h.response('Block body cannot be empty').code(500);
+          }
+          var newBlock = new simpleChain.Block(blockBody);
+          const addedBlock = await server.blockchain.addBlock(newBlock)
+                                    .catch(error => {
+                                      console.log('Error inserting block');
+                                    });
+          return h.response(addedBlock).code(200);
+        }
+    });
 
 // Start the server
 async function start() {
