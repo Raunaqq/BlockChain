@@ -1,0 +1,18 @@
+{
+  "name": "restful_blockchain",
+  "version": "1.0.0",
+  "description": "REST APIs interacting with private blockchain",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Raunaq Kochar",
+  "license": "ISC",
+  "dependencies": {
+    "crypto-js": "^3.1.9-1",
+    "handlebars": "^4.0.12",
+    "hapi": "^17.6.0",
+    "level": "^4.0.0",
+    "vision": "^5.4.0"
+  }
+}
