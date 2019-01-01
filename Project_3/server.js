@@ -27,11 +27,12 @@ server.route({
    path:'/block/{blockHeight}',
    handler:async(request,h) => {
      console.log('GET');
-     const parsedBlock = await server.blockchain.getParsedBlock(request.params.blockHeight)
-                                .catch(error => {
-                                  return h.response('Block at blockheight ' + error + ' not found.').code(404);
-                                });
-     return h.response(JSON.parse(parsedBlock)).code(200);
+     try {
+       const parsedBlock = await server.blockchain.getParsedBlock(request.params.blockHeight);
+       return h.response(JSON.parse(parsedBlock)).code(200);
+     } catch (error) {
+       return h.response(error + ' is a block height out of bounds.\n').code(404);
+     }
    }
 });
 
@@ -46,7 +47,7 @@ server.route({
      console.log(request.payload['blockbody']);
      var newBlock = new simpleChain.Block(request.payload['blockbody']);
      const addedBlock = await server.blockchain.addBlock(newBlock)
-                               .catch(error => {
+                               .catch((error) => {
                                  console.log('Error inserting block');
                                });
      return h.response(JSON.parse(addedBlock)).code(200);
@@ -62,7 +63,8 @@ server.route({
     handler:async(request,h) => {
       console.log('POST');
       console.log(request.params.blockBody);
-      if (blockBody == '') {
+      var blockBody = request.params.blockBody;
+      if (blockBody === '') {
         return h.response('Block body cannot be empty').code(500);
       } else {
         var newBlock = new simpleChain.Block(blockBody);

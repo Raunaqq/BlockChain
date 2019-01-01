@@ -121,7 +121,7 @@ class Blockchain {
 			levelSandbox.getLevelDBData(blockHeight).then((retBlock) => {
 				resolve(JSON.parse(JSON.stringify(retBlock)));
 			}, (blockHeight) => {
-				reject(blockHeight);
+				reject(new Error(blockHeight));
 			});
 		});
 	}
