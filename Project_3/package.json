@@ -4,15 +4,18 @@
   "description": "REST APIs interacting with private blockchain",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "author": "Raunaq Kochar",
   "license": "ISC",
   "dependencies": {
     "crypto-js": "^3.1.9-1",
     "handlebars": "^4.0.12",
-    "hapi": "^17.6.0",
+    "hapi": "^17.8.1",
+    "joi": "^14.3.1",
     "level": "^4.0.0",
-    "vision": "^5.4.0"
-  }
+    "vision": "^5.4.4"
+  },
+  "devDependencies": {}
 }

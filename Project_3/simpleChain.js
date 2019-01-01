@@ -91,7 +91,7 @@ class Blockchain {
 
 				}, (blockHeight) => {
 					// console.log('getParsedBlock() failed.');
-					reject('getParsedBlock() failed.');
+					reject('getParsedBlock() failed: Previous block not found.');
 				});
 			}, (err) => {
 				console.log('getBlockHeight() failed');
@@ -121,7 +121,7 @@ class Blockchain {
 			levelSandbox.getLevelDBData(blockHeight).then((retBlock) => {
 				resolve(JSON.parse(JSON.stringify(retBlock)));
 			}, (blockHeight) => {
-				reject(blockHeight);
+				reject(new Error(blockHeight));
 			});
 		});
 	}
