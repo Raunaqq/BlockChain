@@ -91,7 +91,7 @@ class Blockchain {
 
 				}, (blockHeight) => {
 					// console.log('getParsedBlock() failed.');
-					reject('getParsedBlock() failed.');
+					reject('getParsedBlock() failed: Previous block not found.');
 				});
 			}, (err) => {
 				console.log('getBlockHeight() failed');

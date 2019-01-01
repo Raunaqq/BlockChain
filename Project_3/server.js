@@ -1,7 +1,9 @@
 'use strict';
 
 const Hapi=require('hapi');
+const Joi=require('joi');
 const simpleChain = require('./simpleChain');
+
 
 // Create a server with a host and port
 const server=Hapi.server({
@@ -59,20 +61,23 @@ server.route({
 */
 server.route({
     method:['PUT','POST'],
-    path:'/block/{blockBody}',
+    path:'/block/{blockBody?}',
     handler:async(request,h) => {
       console.log('POST');
-      console.log(request.params.blockBody);
       var blockBody = request.params.blockBody;
-      if (blockBody === '') {
-        return h.response('Block body cannot be empty').code(500);
-      } else {
-        var newBlock = new simpleChain.Block(blockBody);
-        const addedBlock = await server.blockchain.addBlock(newBlock)
-                                  .catch(error => {
-                                    console.log('Error inserting block');
-                                  });
-        return h.response(addedBlock).code(200);
+      var newBlock = new simpleChain.Block(blockBody);
+      const addedBlock = await server.blockchain.addBlock(newBlock)
+                                .catch(error => {
+                                  console.log('Error inserting block');
+                                });
+      return h.response(addedBlock).code(200);
+
+    },
+    options: {
+      validate: {
+        params: {
+          blockBody: Joi.string().min(1)
+        }
       }
     }
 });
