@@ -4,7 +4,7 @@ const Hapi=require('hapi');
 const Joi=require('joi');
 const simpleChain = require('./simpleChain');
 const mempool = require('./mempool');
-
+const hex2ascii = require('hex2ascii');
 // Create a server with a host and port
 const server=Hapi.server({
     host:'127.0.0.1',
@@ -36,58 +36,6 @@ server.route({
        return h.response(error + ' is a block height out of bounds.\n').code(404);
      }
    }
-});
-
-/*
- * Route for POSTing a block given the block body in the form.
- */
-server.route({
-   method:['PUT','POST'],
-   path:'/block',
-   handler:async(request,h) => {
-     console.log('POST');
-     console.log(request.payload.body);
-     var blockBody = request.payload.body;
-     var newBlock = new simpleChain.Block(blockBody);
-     const addedBlock = await server.blockchain.addBlock(newBlock)
-                               .catch((error) => {
-                                 console.log('Error inserting block');
-                               });
-     return h.response(JSON.parse(addedBlock)).code(200);
-   },
-   options: {
-    validate: {
-        payload: {
-            body: Joi.string().min(1)
-        }
-    }
-  }
-});
-
-/*
- * Route for POSTing a block given the block body.
- */
-server.route({
-    method:['PUT','POST'],
-    path:'/block/{blockBody}',
-    handler:async(request,h) => {
-      console.log('POST');
-      var blockBody = request.params.blockBody;
-      var newBlock = new simpleChain.Block(blockBody);
-      const addedBlock = await server.blockchain.addBlock(newBlock)
-                                .catch(error => {
-                                  console.log('Error inserting block');
-                                });
-      return h.response(addedBlock).code(200);
-
-    },
-    options: {
-      validate: {
-        params: {
-          blockBody: Joi.string().min(1)
-        }
-      }
-    }
 });
 
 /*
@@ -126,7 +74,7 @@ server.route({
         return h.response(response).code(200);
       } catch (error) {
         console.log(error + '\n');
-        return h.response('Custom Error\n').code(500);
+        return h.response('Request is not valid\n').code(500);
       }
     }
 });
@@ -139,17 +87,45 @@ server.route({
     path:'/block',
     handler:async(request,h) => {
       console.log('POST');
-      var blockBody = request.payload;
+      var starData = request.payload.body;
+      var address = request.payload.body.address;
+      console.log(request.payload.body);
       /* Verify if request exists and is valid */
+      var isRequestValid = await server.mempool.verifyValidatedRequest(address);
+      if (!isRequestValid) {
+        return h.response('Previously sent request is not valid!').code(400);
+      }
+      var isStarDataValid = await server.mempool.isStarDataValid(starData);
+      if (!isStarDataValid) {
+        return h.response('Star data is not valid!').code(400);
+      }
+
+      /* Encode story in star data */
+      var encodedStarData = {
+        "address" : starData["address"],
+        "star" : {
+          "ra" : starData["star"]["ra"],
+          "dec" : starData["star"]["dec"],
+          "story" : Buffer(starData["star"]["story"]).toString('hex')
+        }
+      }
       /* Create new block and add it to block chain */
-      /*
-      var newBlock = new simpleChain.Block(blockBody);
-      const addedBlock = await server.blockchain.addBlock(newBlock)
-                                .catch(error => {
-                                  console.log('Error inserting block');
-                                });
-      return h.response(addedBlock).code(200);
-      */
+      var newBlock = new simpleChain.Block(encodedStarData);
+      var addedBlock = await server.blockchain.addBlock(newBlock)
+                          .catch(error => {
+                            return h.response('error').code(300);
+                          });
+      var addedBlockJSON = JSON.parse(addedBlock);
+
+      // Decoding the encoded star story
+      var encodedStarStory = addedBlockJSON['body']['star']['story'];
+      var decodedStarStory = hex2ascii(encodedStarStory);
+      addedBlockJSON['body']['star']['storyDecoded'] = decodedStarStory;
+
+      var retVal = JSON.stringify(addedBlockJSON).toString();
+
+      server.mempool.removeFromMempoolValid(address);
+      return h.response(retVal).code(200);
 
     }
 });

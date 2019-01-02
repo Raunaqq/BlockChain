@@ -117,6 +117,48 @@ class Mempool {
 
     });
   }
+
+  /*
+   * Verify validated request from the mempoolValid array.
+   */
+  verifyValidatedRequest(address) {
+    var backupAddress = address;
+    return new Promise((resolve, reject) => {
+      var validationRequest = this.mempoolValid[backupAddress];
+      if (validationRequest['status']['messageSignature']) {
+        console.log('verifyValidatedRequest resolving to true.');
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+
+    });
+  }
+
+  /*
+   * Verify star data.
+   */
+  isStarDataValid(data) {
+    var starData = data;
+    return new Promise((resolve, reject) => {
+      if (!starData['star']['dec'] || !starData['star']['ra'] || !starData['star']['story']) {
+        resolve(false);
+      } else {
+        console.log('isStarDataValid resolving to true.');
+        resolve(true);
+      }
+    });
+
+  }
+
+  removeFromMempoolValid(address) {
+    if (address in this.mempoolValid) {
+      console.log('Removing address from mempoolValid');
+      delete this.mempoolValid[address];
+    } else {
+      console.log('Address not found in mempoolValid');
+    }
+  }
 }
 
 module.exports = {
