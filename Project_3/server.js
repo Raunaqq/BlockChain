@@ -93,9 +93,11 @@ server.route({
       var address = request.payload.address;
       try {
         var response = await server.mempool.addToTimeoutRequests(address);
+        console.log('Got response: ' + response.validationWindow);
         return h.response(response).code(200);
       } catch (error) {
-        return h.response('Custom Error').code(500);
+        console.log(error + '\n');
+        return h.response('Custom Error\n').code(500);
       }
     }
 });
