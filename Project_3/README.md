@@ -2,18 +2,38 @@ Node.js framework used: Hapi.js
 
 ### Endpoints configured:
 * GET /block/{blockHeight}: Get the block at the given block height.
-* POST /block/{blockBody} : Creates a block with the given body and adds it to
-                            the chain.
+* POST /requestValidation : Validates request sent by user.
+* POST /message-signature/validate : Validates signature with wallet address.
+* POST /block : User sends request with star body.
+*
 
 * Steps to run:
 1. npm start
 
-* Steps to POST new block:
-1. curl -d '1' http://127.0.0.1:8000/block/new-data
-2. Note that the '1' after data will not be matter.
-3. new-data will be taken as the text for the block body.
+* Steps to register a new star:
+1. Send validation request:
+curl -X POST   http://localhost:8000/requestValidation   -H 'Content-Type: application/json'   -H 'cache-control: no-cache'   -d '{
+    "address":"19YScRyao293zasT54ehvfzdSpJjXCpqha"
+}'
+
+2. Get the signature from the wallet.
+
+3. Validate with wallet address and signature:
+curl -X POST   http://localhost:8000/message-signature/validate   -H 'Content-Type: application/json'   -H 'cache-control: no-cache'   -d '{
+"address":"19YScRyao293zasT54ehvfzdSpJjXCpqha",
+ "signature":"IHd3jvTeA/PBYhaHhLl0wWjzFYbYxEaxNv25R85SyNgWAy09JUm8oTB8SnEsWv7eVPqAgb0DJfNjnWUTfOqItpQ="
+}'
+
+4. Send star body to be stored on the blockchain:
+curl -X POST http://localhost:8000/block -H 'Content-Type: application/json' -H 'cache-control: no-cache' -d '{"body":{
+  "address": "19YScRyao293zasT54ehvfzdSpJjXCpqha",
+  "star": {
+    "dec": "68° 52 56.9",
+    "ra": "16h 29m 1.0s",
+    "story": "Found star using https://www.google.com/sky/"
+    }
+}}'
 
 * Steps to GET a block:
-1. Go to link http://localhost:8000/block/[blockHeight], where [blockHeight] is
-   replaced by the height of the block that you want.
-2. If blockHeight is out of bounds, appropriate error is returned.
+1. Query with blockHeight:
+curl -G http://localhost:8000/block/33
