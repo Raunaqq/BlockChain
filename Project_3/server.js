@@ -43,17 +43,25 @@ server.route({
 */
 server.route({
    method:['PUT','POST'],
-   path:'/block/blockbody-from-form',
+   path:'/block',
    handler:async(request,h) => {
      console.log('POST');
-     console.log(request.payload['blockbody']);
-     var newBlock = new simpleChain.Block(request.payload['blockbody']);
+     console.log(request.payload.body);
+     var blockBody = request.payload.body;
+     var newBlock = new simpleChain.Block(blockBody);
      const addedBlock = await server.blockchain.addBlock(newBlock)
                                .catch((error) => {
                                  console.log('Error inserting block');
                                });
      return h.response(JSON.parse(addedBlock)).code(200);
-   }
+   },
+   options: {
+    validate: {
+        payload: {
+            body: Joi.string().min(1)
+        }
+    }
+  }
 });
 
 /*
@@ -61,7 +69,7 @@ server.route({
 */
 server.route({
     method:['PUT','POST'],
-    path:'/block/{blockBody?}',
+    path:'/block/{blockBody}',
     handler:async(request,h) => {
       console.log('POST');
       var blockBody = request.params.blockBody;
