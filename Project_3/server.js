@@ -123,6 +123,29 @@ server.route({
     }
 });
 
+/*
+ * Route for registering a star with custom data.
+ */
+server.route({
+    method:['PUT','POST'],
+    path:'/block',
+    handler:async(request,h) => {
+      console.log('POST');
+      var blockBody = request.payload;
+      /* Verify if request exists and is valid */
+      /* Create new block and add it to block chain */
+      /*
+      var newBlock = new simpleChain.Block(blockBody);
+      const addedBlock = await server.blockchain.addBlock(newBlock)
+                                .catch(error => {
+                                  console.log('Error inserting block');
+                                });
+      return h.response(addedBlock).code(200);
+      */
+
+    }
+});
+
 // Start the server
 async function start() {
 

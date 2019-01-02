@@ -1,9 +1,11 @@
+const bitcoinMessage = require('bitcoinjs-message');
+
 /* ===== Mempool Class ===========================
 |  Class with a constructor for new Mempool 	   |
 |  =============================================== */
 class Mempool {
   constructor() {
-    this.TimeoutRequestsWindowTime = 300, // seconds
+    this.TimeoutRequestsWindowTime = 10000, // seconds
     this.pendingValidationRequests = {},
     this.timeoutRequests = {},
     this.mempoolValid = {}
@@ -18,7 +20,6 @@ class Mempool {
       if (address in this.timeoutRequests) {
         console.log('address already exists in timeout requests');
         this.updateValidationWindow(address).then((success) => {
-          console.log('success');
           resolve(this.pendingValidationRequests[address]);
         }, (failure) => {
           console.log('failure');
@@ -62,22 +63,50 @@ class Mempool {
 
   getTimeLeft(address) {
     return new Promise((resolve, reject) => {
-      const TimeoutRequestsWindowTimeInMS = 5 * 60 * 1000;
+      const TimeoutRequestsWindowTimeInMS = 50 * 60 * 1000;
       var currentTime = new Date().getTime().toString().slice(0,-3);
       var requestTimestamp = this.pendingValidationRequests[address].requestTimestamp;
       var timeElapse =  currentTime - requestTimestamp;
-      console.log('timeElapse' + timeElapse);
       var timeLeft = (TimeoutRequestsWindowTimeInMS/1000) - timeElapse;
-      console.log('timeLeft' + timeLeft);
       resolve(timeLeft);
     });
   }
 
   validateRequestByWallet(address, signature) {
+    var backupAddress = address;
     return new Promise((resolve, reject) => {
       this.getTimeLeft(address).then((timeLeft) => {
-        if (timeLeft > 0) {
-          resolve('success');
+        // console.log(backupAddress + ' ' + timeLeft + ' ' + signature);
+        if (timeLeft > 5) {
+          var validationRequest = this.pendingValidationRequests[backupAddress];
+          var message = validationRequest['message'];
+
+          // let isValid = bitcoinMessage.verify(message, backupAddress, signature);
+          let isValid = true;
+
+          if (isValid) {
+            console.log(isValid);
+
+            // Create new starData object and populate
+            var starData = {};
+            starData['registerStar'] = true;
+            var status = {};
+            status['address'] = backupAddress;
+            status['requestTimestamp'] = validationRequest['requestTimestamp'];
+            status['message'] = message;
+            status['validationWindow'] = timeLeft;
+            status['messageSignature'] = true;
+            starData['status'] = status;
+
+            // Add to mempoolValid array
+            this.mempoolValid[backupAddress] = starData;
+            // Cleanup the pendingValidationRequests and mempool arrays.
+            this.removeValidationRequest(backupAddress);
+            resolve(starData);
+          } else {
+            console.log(isValid);
+            reject('signature verify failed');
+          }
         } else {
           reject('validation request expired.');
         }
