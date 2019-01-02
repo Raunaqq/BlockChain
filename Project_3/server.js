@@ -3,7 +3,7 @@
 const Hapi=require('hapi');
 const Joi=require('joi');
 const simpleChain = require('./simpleChain');
-
+const mempool = require('./mempool');
 
 // Create a server with a host and port
 const server=Hapi.server({
@@ -39,8 +39,8 @@ server.route({
 });
 
 /*
-* Route for POSTing a block given the block body in the form.
-*/
+ * Route for POSTing a block given the block body in the form.
+ */
 server.route({
    method:['PUT','POST'],
    path:'/block/blockbody-from-form',
@@ -57,8 +57,8 @@ server.route({
 });
 
 /*
-* Route for POSTing a block given the block body.
-*/
+ * Route for POSTing a block given the block body.
+ */
 server.route({
     method:['PUT','POST'],
     path:'/block/{blockBody?}',
@@ -82,12 +82,31 @@ server.route({
     }
 });
 
+/*
+ * Route for POSTing a request for validation to be stored in mempool.
+ */
+server.route({
+    method:['PUT','POST'],
+    path:'/requestValidation',
+    handler:async(request,h) => {
+      console.log('POST');
+      var address = request.payload.address;
+      try {
+        var response = await server.mempool.addToTimeoutRequests(address);
+        return h.response(response).code(200);
+      } catch (error) {
+        return h.response('Custom Error').code(500);
+      }
+    }
+});
+
 // Start the server
 async function start() {
 
     try {
         await server.start();
         server.blockchain = new simpleChain.Blockchain();
+        server.mempool = new mempool.Mempool();
         await server.register(require('vision'));
 
         server.views({
