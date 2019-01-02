@@ -51,6 +51,17 @@ class Mempool {
 
   updateValidationWindow(address) {
     return new Promise((resolve, reject) => {
+      this.getTimeLeft(address).then((timeLeft) => {
+        this.pendingValidationRequests[address].validationWindow = timeLeft;
+        resolve(this.pendingValidationRequests[address]);
+      },(error) => {
+        reject(error);
+      });
+    });
+  }
+
+  getTimeLeft(address) {
+    return new Promise((resolve, reject) => {
       const TimeoutRequestsWindowTimeInMS = 5 * 60 * 1000;
       var currentTime = new Date().getTime().toString().slice(0,-3);
       var requestTimestamp = this.pendingValidationRequests[address].requestTimestamp;
@@ -58,8 +69,23 @@ class Mempool {
       console.log('timeElapse' + timeElapse);
       var timeLeft = (TimeoutRequestsWindowTimeInMS/1000) - timeElapse;
       console.log('timeLeft' + timeLeft);
-      this.pendingValidationRequests[address].validationWindow = timeLeft;
-      resolve(this.pendingValidationRequests[address]);
+      resolve(timeLeft);
+    });
+  }
+
+  validateRequestByWallet(address, signature) {
+    return new Promise((resolve, reject) => {
+      this.getTimeLeft(address).then((timeLeft) => {
+        if (timeLeft > 0) {
+          resolve('success');
+        } else {
+          reject('validation request expired.');
+        }
+      },
+      (error) => {
+        reject('error');
+      });
+
     });
   }
 }

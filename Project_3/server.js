@@ -102,6 +102,27 @@ server.route({
     }
 });
 
+/*
+ * Route for POSTing a signature and address for validation.
+ */
+server.route({
+    method:['PUT','POST'],
+    path:'/message-signature/validate',
+    handler:async(request,h) => {
+      console.log('POST');
+      var address = request.payload.address;
+      var signature = request.payload.signature;
+      try {
+        var response = await server.mempool.validateRequestByWallet(address, signature);
+        // console.log('Got response: ' + response.validationWindow);
+        return h.response(response).code(200);
+      } catch (error) {
+        console.log(error + '\n');
+        return h.response('Custom Error\n').code(500);
+      }
+    }
+});
+
 // Start the server
 async function start() {
 
