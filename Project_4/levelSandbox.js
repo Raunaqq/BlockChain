@@ -5,6 +5,7 @@
 const level = require('level');
 const chainDB = './chaindata';
 const db = level(chainDB);
+const hex2ascii = require('hex2ascii');
 
 // Add data to levelDB with key/value pair
 function addLevelDBData(key,value){
@@ -60,6 +61,32 @@ function getLevelDBDataFromHash(hash) {
   });
 }
 
+function getLevelDBDataFromAddress(address) {
+  let backupAddress = address;
+  let stars = [];
+  let block = null;
+  return new Promise(function(resolve, reject){
+    db.createReadStream().on('data', function(data) {
+      // console.log(data.value);
+      if(JSON.parse(data.value).body.address === backupAddress){
+        console.log('Found matching address');
+        block = JSON.parse(data.value);
+        // Decode the star's story
+        let encodedStarStory = block['body']['star']['story'];
+        let decodedStarStory = hex2ascii(encodedStarStory);
+        block['body']['star']['storyDecoded'] = decodedStarStory;
+        stars.push(block);
+      }
+    })
+    .on('error', function (err) {
+      reject(err)
+    })
+    .on('close', function () {
+      resolve(stars);
+    });
+  });
+}
+
 // Count all objects stored in the DB
 function count() {
   let numBlocks = 0;
@@ -93,5 +120,6 @@ module.exports = {
   addLevelDBData : addLevelDBData,
   count : count,
   printAllBlocks : printAllBlocks,
-  getLevelDBDataFromHash : getLevelDBDataFromHash
+  getLevelDBDataFromHash : getLevelDBDataFromHash,
+  getLevelDBDataFromAddress : getLevelDBDataFromAddress
 }

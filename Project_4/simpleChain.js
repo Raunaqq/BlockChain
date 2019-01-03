@@ -147,6 +147,21 @@ class Blockchain {
 		});
 	}
 
+  getParsedStarsForAddress(walletAddress) {
+		console.log('getParsedStarsForAddress');
+		// return array of stars
+		let backupAddress = walletAddress;
+		return new Promise(function(resolve, reject) {
+			levelSandbox.getLevelDBDataFromAddress(backupAddress).then((retArr) => {
+				console.log(retArr);
+				resolve(retArr);
+			}, (hash) => {
+				console.log('Error encountered');
+				reject(new Error(backupHash));
+			});
+		});
+	}
+
   // validate block
   validateBlock(blockHeight){
 		return new Promise((resolve, reject) => {
