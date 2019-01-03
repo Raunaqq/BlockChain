@@ -25,14 +25,14 @@ curl -X POST   http://localhost:8000/message-signature/validate   -H 'Content-Ty
 }'
 
 4. Send star body to be stored on the blockchain:
-curl -X POST http://localhost:8000/block -H 'Content-Type: application/json' -H 'cache-control: no-cache' -d '{"body":{
+curl -X POST http://localhost:8000/block -H 'Content-Type: application/json' -H 'cache-control: no-cache' -d '{
   "address": "19YScRyao293zasT54ehvfzdSpJjXCpqha",
   "star": {
     "dec": "68° 52 56.9",
     "ra": "16h 29m 1.0s",
     "story": "Found star using https://www.google.com/sky/"
     }
-}}'
+}'
 
 * Steps to GET a block:
 1. Query with blockHeight:

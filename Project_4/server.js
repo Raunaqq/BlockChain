@@ -76,6 +76,14 @@ server.route({
         console.log(error + '\n');
         return h.response('Request is not valid\n').code(500);
       }
+    },
+    options: {
+      validate: {
+        payload: {
+          address: Joi.string().min(1),
+          signature: Joi.string().min(1)
+        }
+      }
     }
 });
 
@@ -87,9 +95,9 @@ server.route({
     path:'/block',
     handler:async(request,h) => {
       console.log('POST');
-      var starData = request.payload.body;
-      var address = request.payload.body.address;
-      console.log(request.payload.body);
+      var starData = request.payload;
+      var address = request.payload.address;
+      console.log(request.payload);
       /* Verify if request exists and is valid */
       var isRequestValid = await server.mempool.verifyValidatedRequest(address);
       if (!isRequestValid) {
