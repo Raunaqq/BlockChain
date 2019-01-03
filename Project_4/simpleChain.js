@@ -4,6 +4,7 @@
 
 const SHA256 = require('crypto-js/sha256');
 const levelSandbox = require('./levelSandbox');
+const hex2ascii = require('hex2ascii');
 
 /* ===== Block Class ==============================
 |  Class with a constructor for block 			   |
@@ -113,7 +114,7 @@ class Blockchain {
 
 	}
 
-  // get block
+  // get block using blockheight
   getParsedBlock(blockHeight){
 		// console.log('getParsedBlock');
 		// return object as a single string
@@ -122,6 +123,26 @@ class Blockchain {
 				resolve(JSON.parse(JSON.stringify(retBlock)));
 			}, (blockHeight) => {
 				reject(new Error(blockHeight));
+			});
+		});
+	}
+
+  // get block using hash
+	getParsedStarFromHash(hash) {
+		// console.log('getParsedStarFromHash');
+		// return object as single string
+		const backupHash = hash;
+		return new Promise(function(resolve, reject) {
+			levelSandbox.getLevelDBDataFromHash(backupHash).then((retBlock) => {
+				console.log(retBlock);
+				// Decode the star's story
+				let encodedStarStory = retBlock['body']['star']['story'];
+				let decodedStarStory = hex2ascii(encodedStarStory);
+				retBlock['body']['star']['storyDecoded'] = decodedStarStory;
+				resolve(retBlock);
+			}, (hash) => {
+				console.log('Error encountered');
+				reject(new Error(backupHash));
 			});
 		});
 	}

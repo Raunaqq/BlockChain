@@ -37,6 +37,29 @@ function getLevelDBData(key){
 
 }
 
+function getLevelDBDataFromHash(hash) {
+  // console.log('getLevelDBDataFromHash');
+  let self = this;
+  let block = null;
+  let backupHash = hash;
+  return new Promise(function(resolve, reject){
+    db.createReadStream().on('data', function(data) {
+      // console.log(data);
+      // console.log(JSON.parse(data.value).hash);
+      if(JSON.parse(data.value).hash === backupHash){
+        console.log('Found matching hash');
+        block = JSON.parse(data.value);
+      }
+    })
+    .on('error', function (err) {
+      reject(err)
+    })
+    .on('close', function () {
+      resolve(block);
+    });
+  });
+}
+
 // Count all objects stored in the DB
 function count() {
   let numBlocks = 0;
@@ -69,5 +92,6 @@ module.exports = {
   getLevelDBData : getLevelDBData,
   addLevelDBData : addLevelDBData,
   count : count,
-  printAllBlocks : printAllBlocks
+  printAllBlocks : printAllBlocks,
+  getLevelDBDataFromHash : getLevelDBDataFromHash
 }

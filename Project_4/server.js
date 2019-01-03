@@ -39,6 +39,31 @@ server.route({
 });
 
 /*
+ * Route for getting a star object, given its hash.
+ */
+ server.route({
+    method:'GET',
+    path:'/stars/hash:{hash}',
+    handler:async(request,h) => {
+      console.log('GET');
+      try {
+        const starData = await server.blockchain.getParsedStarFromHash(request.params.hash);
+        return h.response(starData).code(200);
+      } catch (error) {
+        console.log(error);
+        return h.response('No such hash present.\n').code(404);
+      }
+    },
+    options: {
+      validate: {
+        params: {
+          hash: Joi.string().min(1)
+        }
+      }
+    }
+ });
+
+/*
  * Route for POSTing a request for validation to be stored in mempool.
  */
 server.route({

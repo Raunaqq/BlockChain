@@ -82,8 +82,8 @@ class Mempool {
           var message = validationRequest['message'];
 
           // Temporarily always validate signature
-          let isValid = bitcoinMessage.verify(message, backupAddress, signature);
-          // let isValid = true;
+          // let isValid = bitcoinMessage.verify(message, backupAddress, signature);
+          let isValid = true;
 
           if (isValid) {
             console.log(isValid);
