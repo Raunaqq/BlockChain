@@ -39,6 +39,56 @@ server.route({
 });
 
 /*
+ * Route for getting a star object, given its hash.
+ */
+ server.route({
+    method:'GET',
+    path:'/stars/hash:{hash}',
+    handler:async(request,h) => {
+      console.log('GET');
+      try {
+        const starData = await server.blockchain.getParsedStarFromHash(request.params.hash);
+        return h.response(starData).code(200);
+      } catch (error) {
+        console.log(error);
+        return h.response('No such hash present.\n').code(404);
+      }
+    },
+    options: {
+      validate: {
+        params: {
+          hash: Joi.string().min(1)
+        }
+      }
+    }
+ });
+
+ /*
+  * Route for getting all stars, associated with given wallet address.
+  */
+  server.route({
+     method:'GET',
+     path:'/stars/address:{walletAddress}',
+     handler:async(request,h) => {
+       console.log('GET');
+       try {
+         const stars = await server.blockchain.getParsedStarsForAddress(request.params.walletAddress);
+         return h.response(stars).code(200);
+       } catch (error) {
+         console.log(error);
+         return h.response('No such stars present.\n').code(404);
+       }
+     },
+     options: {
+       validate: {
+         params: {
+           walletAddress: Joi.string().min(1)
+         }
+       }
+     }
+  });
+
+/*
  * Route for POSTing a request for validation to be stored in mempool.
  */
 server.route({
@@ -76,6 +126,14 @@ server.route({
         console.log(error + '\n');
         return h.response('Request is not valid\n').code(500);
       }
+    },
+    options: {
+      validate: {
+        payload: {
+          address: Joi.string().min(1),
+          signature: Joi.string().min(1)
+        }
+      }
     }
 });
 
@@ -87,9 +145,9 @@ server.route({
     path:'/block',
     handler:async(request,h) => {
       console.log('POST');
-      var starData = request.payload.body;
-      var address = request.payload.body.address;
-      console.log(request.payload.body);
+      var starData = request.payload;
+      var address = request.payload.address;
+      console.log(request.payload);
       /* Verify if request exists and is valid */
       var isRequestValid = await server.mempool.verifyValidatedRequest(address);
       if (!isRequestValid) {
